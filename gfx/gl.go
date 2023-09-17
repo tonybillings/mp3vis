@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+var (
+	windowObjects []WindowObject
+)
+
 func initWindow(width, height int) (*glfw.Window, error) {
 	if err := glfw.Init(); err != nil {
 		return nil, err
@@ -60,6 +64,10 @@ func closeWindowObjects() {
 	for _, o := range windowObjects {
 		o.Close()
 	}
+}
+
+func AddWindowObject(object WindowObject) {
+	windowObjects = append(windowObjects, object)
 }
 
 func Run(ctx context.Context, cancelFunc context.CancelFunc, windowWidth int, windowHeight int) {

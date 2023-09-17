@@ -65,7 +65,7 @@ type PulsingImage struct {
 }
 
 func (o *WindowObjectBase) Update(_ int64) {
-
+	// Default implementation
 }
 
 func (o *WindowObjectBase) Close() {

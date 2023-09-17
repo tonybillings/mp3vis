@@ -3,7 +3,7 @@ package audio
 import "sync"
 
 type RegisterType interface {
-	float32 // | bool
+	float32
 }
 
 type BaseRegister[T RegisterType] struct {
