@@ -4,12 +4,13 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"tonysoft.com/mp3vis/audio"
 	"tonysoft.com/mp3vis/gfx"
 )
 
-func getCliArgs() (mp3Filename, bgFilename string) {
+func getCliArgs() (mp3Filename, bgFilename string, windowWidth, windowHeight int) {
 	if len(os.Args) < 2 {
 		panic("must pass in the path to the music file (*.mp3)")
 	}
@@ -18,7 +19,25 @@ func getCliArgs() (mp3Filename, bgFilename string) {
 		panic("must pass in the path to the background image (*.png)")
 	}
 
-	return os.Args[1], os.Args[2]
+	if len(os.Args) < 4 {
+		panic("must pass in the desired window width")
+	}
+
+	if len(os.Args) < 5 {
+		panic("must pass in the desired window height")
+	}
+
+	width, err := strconv.Atoi(os.Args[3])
+	if err != nil {
+		panic("error converting the third CLI argument (window width) to int")
+	}
+
+	height, err := strconv.Atoi(os.Args[4])
+	if err != nil {
+		panic("error converting the fourth CLI argument (window height) to int")
+	}
+
+	return os.Args[1], os.Args[2], width, height
 }
 
 func waitForInterruptSignal(ctx context.Context, cancelFunc context.CancelFunc) {
@@ -35,7 +54,7 @@ func waitForInterruptSignal(ctx context.Context, cancelFunc context.CancelFunc) 
 }
 
 func main() {
-	mp3Filename, bgFilename := getCliArgs()
+	mp3Filename, bgFilename, windowWidth, windowHeight := getCliArgs()
 
 	bassPulse := audio.AddBandPeakRegister(25, 80)
 
@@ -55,5 +74,5 @@ func main() {
 
 	go waitForInterruptSignal(ctx, cancelFunc)
 	go audio.Play(ctx, cancelFunc, mp3Filename)
-	gfx.Run(ctx, cancelFunc, 3000, 2000)
+	gfx.Run(ctx, cancelFunc, windowWidth, windowHeight)
 }
