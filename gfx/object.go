@@ -48,10 +48,11 @@ type PulsingCircle struct {
 type PulsingLine struct {
 	WindowObjectBase
 	PulsingObjectBase
-	thickness   int32
-	vertexCount int32
-	centerY     float32
-	pixelHeight float32
+	thickness           int32
+	thicknessUniformPos int32
+	stepUniformPos      int32
+	vertexCount         int32
+	centerY             float32
 }
 
 type PulsingImage struct {
@@ -115,23 +116,27 @@ func (c *PulsingCircle) initGl() {
 
 func (l *PulsingLine) initVertices() {
 	l.vertexCount = 200
-	l.verts = make([]float32, l.thickness*l.vertexCount*2)
+	l.verts = make([]float32, l.vertexCount*2)
 	step := 2.0 / float32(l.vertexCount)
 
-	_, height := l.window.GetSize()
-	l.pixelHeight = 2.0 / float32(height)
-
-	for lineNum := int32(0); lineNum < l.thickness; lineNum++ {
-		lineOffset := lineNum * l.vertexCount * 2
-		for i := int32(0); i < l.vertexCount; i++ {
-			l.verts[lineOffset+(i*2)] = -1 + float32(i)*step
-			l.verts[lineOffset+(i*2+1)] = l.centerY + (float32(lineNum) * l.pixelHeight)
-		}
+	for i := int32(0); i < l.vertexCount; i++ {
+		l.verts[i*2] = -1 + float32(i)*step
+		l.verts[i*2+1] = l.centerY
 	}
 }
 
 func (l *PulsingLine) initGl() {
 	l.shader = shaders[pulsingLineShader]
+	l.thicknessUniformPos = gl.GetUniformLocation(l.shader, gl.Str("thickness\x00"))
+	l.stepUniformPos = gl.GetUniformLocation(l.shader, gl.Str("step\x00"))
+
+	_, height := l.window.GetSize()
+	pixelHeight := 2.0 / float32(height)
+
+	gl.UseProgram(l.shader)
+	gl.Uniform1f(l.stepUniformPos, pixelHeight)
+	gl.UseProgram(0)
+
 	l.vbo = make([]uint32, 1)
 
 	gl.GenVertexArrays(1, &l.vao)
@@ -252,14 +257,9 @@ func (l *PulsingLine) Update(deltaTime int64) {
 
 	maxOffset := float32(0.25)
 	noise := make([]float32, l.vertexCount)
-	for lineNum := int32(0); lineNum < l.thickness; lineNum++ {
-		lineOffset := lineNum * l.vertexCount * 2
-		for i := int32(0); i < l.vertexCount; i++ {
-			if lineNum == 0 {
-				noise[i] = float32((rand.Float64() * 2.0) - 1.0)
-			}
-			l.verts[lineOffset+(i*2+1)] = l.centerY + (noise[i] * l.pulseScalar * maxOffset) + (float32(lineNum) * l.pixelHeight)
-		}
+	for i := int32(0); i < l.vertexCount; i++ {
+		noise[i] = float32((rand.Float64() * 2.0) - 1.0)
+		l.verts[i*2+1] = l.centerY + (noise[i] * l.pulseScalar * maxOffset)
 	}
 }
 
@@ -284,15 +284,14 @@ func (c *PulsingCircle) Draw(deltaTime int64) {
 
 func (l *PulsingLine) Draw(deltaTime int64) {
 	gl.UseProgram(l.shader)
+	gl.Uniform1f(l.thicknessUniformPos, float32(l.thickness))
 
 	gl.BindVertexArray(l.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, l.vbo[0])
 
 	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(l.verts)*sizeOfFloat32, gl.Ptr(l.verts))
 
-	for lineNum := int32(0); lineNum < l.thickness; lineNum++ {
-		gl.DrawArrays(gl.LINE_STRIP, lineNum*l.vertexCount, l.vertexCount)
-	}
+	gl.DrawArrays(gl.LINE_STRIP, 0, l.vertexCount)
 
 	gl.BindVertexArray(0)
 	gl.UseProgram(0)

@@ -26,6 +26,9 @@ var (
 	//go:embed shaders/pulsing_line.fs
 	pulsingLineShaderFs string
 
+	//go:embed shaders/pulsing_line.gs
+	pulsingLineShaderGs string
+
 	//go:embed shaders/pulsing_image.vs
 	pulsingImageShaderVs string
 
@@ -38,17 +41,17 @@ var (
 )
 
 func initShaders() error {
-	circleProg, err := createShaderProgram(pulsingCircleShaderVs, pulsingCircleShaderFs)
+	circleProg, err := createShaderProgram(pulsingCircleShaderVs, "", pulsingCircleShaderFs)
 	if err != nil {
 		return err
 	}
 
-	lineProg, err := createShaderProgram(pulsingLineShaderVs, pulsingLineShaderFs)
+	lineProg, err := createShaderProgram(pulsingLineShaderVs, pulsingLineShaderGs, pulsingLineShaderFs)
 	if err != nil {
 		return err
 	}
 
-	imageProg, err := createShaderProgram(pulsingImageShaderVs, pulsingImageShaderFs)
+	imageProg, err := createShaderProgram(pulsingImageShaderVs, "", pulsingImageShaderFs)
 	if err != nil {
 		return err
 	}
@@ -91,7 +94,7 @@ func checkProgramError(program uint32) error {
 	return nil
 }
 
-func createShaderProgram(vertexSource, fragmentSource string) (uint32, error) {
+func createShaderProgram(vertexSource, geometrySource, fragmentSource string) (uint32, error) {
 	vertexShader := gl.CreateShader(gl.VERTEX_SHADER)
 	cstr, free := gl.Strs(vertexSource + "\x00")
 	gl.ShaderSource(vertexShader, 1, cstr, nil)
@@ -99,6 +102,18 @@ func createShaderProgram(vertexSource, fragmentSource string) (uint32, error) {
 	gl.CompileShader(vertexShader)
 	if err := checkShaderError(vertexShader); err != nil {
 		return 0, err
+	}
+
+	var geometryShader uint32
+	if geometrySource != "" {
+		geometryShader = gl.CreateShader(gl.GEOMETRY_SHADER)
+		cstr, free = gl.Strs(geometrySource + "\x00")
+		gl.ShaderSource(geometryShader, 1, cstr, nil)
+		free()
+		gl.CompileShader(geometryShader)
+		if err := checkShaderError(geometryShader); err != nil {
+			return 0, err
+		}
 	}
 
 	fragmentShader := gl.CreateShader(gl.FRAGMENT_SHADER)
@@ -112,6 +127,9 @@ func createShaderProgram(vertexSource, fragmentSource string) (uint32, error) {
 
 	shaderProgram := gl.CreateProgram()
 	gl.AttachShader(shaderProgram, vertexShader)
+	if geometrySource != "" {
+		gl.AttachShader(shaderProgram, geometryShader)
+	}
 	gl.AttachShader(shaderProgram, fragmentShader)
 	gl.LinkProgram(shaderProgram)
 	if err := checkProgramError(shaderProgram); err != nil {
@@ -119,6 +137,9 @@ func createShaderProgram(vertexSource, fragmentSource string) (uint32, error) {
 	}
 
 	gl.DeleteShader(vertexShader)
+	if geometrySource != "" {
+		gl.DeleteShader(geometryShader)
+	}
 	gl.DeleteShader(fragmentShader)
 
 	return shaderProgram, nil

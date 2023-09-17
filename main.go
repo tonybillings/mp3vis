@@ -60,9 +60,9 @@ func main() {
 
 	background := gfx.NewPulsingImage(bassPulse, bgFilename)
 	circle := gfx.NewPulsingCircle(bassPulse)
-	lineMiddle := gfx.NewPulsingLine(bassPulse, 20, 0)
-	lineTop := gfx.NewPulsingLine(bassPulse, 20, .5)
-	lineBottom := gfx.NewPulsingLine(bassPulse, 20, -.5)
+	lineMiddle := gfx.NewPulsingLine(bassPulse, 10, 0)
+	lineTop := gfx.NewPulsingLine(bassPulse, 40, .5)
+	lineBottom := gfx.NewPulsingLine(bassPulse, 40, -.5)
 
 	gfx.AddWindowObject(background)
 	gfx.AddWindowObject(circle)
