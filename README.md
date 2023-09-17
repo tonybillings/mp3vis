@@ -23,13 +23,13 @@ chmod +x build.sh
 
 ## Running
 
-To run with the bundled image and mp3 file:
+To run with the bundled image/mp3 and default window size:
 ```shell
 chmod +x run.sh
 ./run.sh
 ```
 
-To run with a custom image/mp3 file:
+To run with a custom image/mp3 and window size :
 ```shell
-./mp3vis <path_to_mp3> <path_to_png>
+./mp3vis <path_to_mp3> <path_to_png> <window_width> <window_height>
 ```
